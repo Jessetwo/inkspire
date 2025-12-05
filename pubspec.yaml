@@ -1,0 +1,42 @@
+name: inkspire
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  firebase_core: ^4.1.1
+  firebase_auth: ^6.1.0
+  cloud_firestore: ^6.0.2
+  smooth_page_indicator: ^1.2.1
+  shared_preferences: ^2.5.3
+  curved_navigation_bar: ^1.0.6
+  firebase_storage: ^13.0.2
+  timeago: ^3.7.1
+  image_picker: ^1.2.0
+  permission_handler: ^12.0.1
+  device_info_plus: ^12.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Flutter Launcher Icons configuration
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
