@@ -67,11 +67,16 @@ class Stories extends StatelessWidget {
                       itemCount: posts.length,
                       itemBuilder: (context, index) {
                         final post = posts[index];
+
+                        // Get author name from post's authorFirstname and authorOthername fields
                         final authorName =
-                            (post.firstname.isNotEmpty &&
-                                post.othername.isNotEmpty)
-                            ? '${post.firstname} ${post.othername}'
-                            : post.author;
+                            (post.authorFirstname.isNotEmpty &&
+                                post.authorOthername.isNotEmpty)
+                            ? '${post.authorFirstname} ${post.authorOthername}'
+                            : (post.author.isNotEmpty
+                                  ? post.author
+                                  : 'Anonymous');
+
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(

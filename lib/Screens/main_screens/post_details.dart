@@ -19,9 +19,12 @@ class PostDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     final postService = PostService();
     final user = FirebaseAuth.instance.currentUser;
-    final authorName = (post.firstname.isNotEmpty && post.othername.isNotEmpty)
-        ? '${post.firstname} ${post.othername}'
-        : post.author;
+
+    // Updated to use authorFirstname and authorOthername
+    final authorName =
+        (post.authorFirstname.isNotEmpty && post.authorOthername.isNotEmpty)
+        ? '${post.authorFirstname} ${post.authorOthername}'
+        : (post.author.isNotEmpty ? post.author : 'Anonymous');
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       postService.incrementViewCount(post.id);
@@ -98,9 +101,8 @@ class PostDetails extends StatelessWidget {
                       return const Center(child: Text('No comments yet'));
                     }
                     return ListView.builder(
-                      shrinkWrap: true, // Fit content to available space
-                      physics:
-                          const NeverScrollableScrollPhysics(), // Disable inner scroll
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: comments.length,
                       itemBuilder: (context, index) {
                         final comment = comments[index];
@@ -180,6 +182,8 @@ class PostDetails extends StatelessWidget {
                           );
                           return;
                         }
+
+                        // Fetch user's name from Firestore
                         String authorName = user.email ?? 'Anonymous';
                         final userDoc = await FirebaseFirestore.instance
                             .collection('users')
@@ -194,19 +198,27 @@ class PostDetails extends StatelessWidget {
                             authorName = '$firstname $othername';
                           }
                         }
+
                         await postService.addComment(
                           postId: post.id,
                           content: _commentController.text,
                           author: authorName,
                         );
                         _commentController.clear();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Comment posted')),
-                        );
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Comment posted')),
+                          );
+                        }
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error posting comment: $e')),
-                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error posting comment: $e'),
+                            ),
+                          );
+                        }
                       }
                     }
                   },

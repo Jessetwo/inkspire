@@ -21,18 +21,27 @@ class PostService {
     try {
       debugPrint('Starting post creation: title=$title, author=$author');
       final user = FirebaseAuth.instance.currentUser;
-      String firstname = '';
-      String othername = '';
+      String authorFirstname = '';
+      String authorOthername = '';
+
       if (user != null) {
+        debugPrint('Current user UID: ${user.uid}');
         final userDoc = await _firestore
             .collection(_usersCollection)
             .doc(user.uid)
             .get();
+
+        debugPrint('User document exists: ${userDoc.exists}');
+
         if (userDoc.exists) {
-          firstname = userDoc.data()?['firstname']?.toString() ?? '';
-          othername = userDoc.data()?['othername']?.toString() ?? '';
+          final userData = userDoc.data();
+          debugPrint('User document data: $userData');
+
+          authorFirstname = userDoc.data()?['firstname']?.toString() ?? '';
+          authorOthername = userDoc.data()?['othername']?.toString() ?? '';
+
           debugPrint(
-            'User data found: firstname=$firstname, othername=$othername',
+            'Extracted names: authorFirstname="$authorFirstname", authorOthername="$authorOthername"',
           );
         } else {
           debugPrint('No user document found for UID: ${user.uid}');
@@ -49,21 +58,25 @@ class PostService {
       debugPrint('Waiting for upload to complete');
       final snapshot = await uploadTask;
       debugPrint('Upload completed, state: ${snapshot.state}');
-      final imageUrl = await snapshot.ref.getDownloadURL();
-      debugPrint('Download URL: $imageUrl');
+      debugPrint('Storage path: $imagePath');
 
       debugPrint('Saving post to Firestore');
       final post = Post(
         id: '',
-        imagePath: imageUrl,
+        imagePath: imagePath,
         title: title,
-        firstname: firstname,
-        othername: othername,
+        authorFirstname: authorFirstname,
+        authorOthername: authorOthername,
         author: author,
         timestamp: DateTime.now(),
         viewCount: 0,
         description: description,
       );
+
+      debugPrint(
+        'Post object created with: authorFirstname="$authorFirstname", authorOthername="$authorOthername"',
+      );
+      debugPrint('Post JSON: ${post.toJson()}');
 
       final docRef = await _firestore
           .collection(_postsCollection)
@@ -72,8 +85,8 @@ class PostService {
         id: docRef.id,
         imagePath: post.imagePath,
         title: post.title,
-        firstname: post.firstname,
-        othername: post.othername,
+        authorFirstname: post.authorFirstname,
+        authorOthername: post.authorOthername,
         author: post.author,
         timestamp: post.timestamp,
         viewCount: post.viewCount,
@@ -91,22 +104,31 @@ class PostService {
   Future<List<Post>> getPosts() async {
     try {
       debugPrint('Fetching posts from Firestore');
-      final snapshot = await _firestore.collection(_postsCollection).get();
+      final snapshot = await _firestore
+          .collection(_postsCollection)
+          .orderBy('timestamp', descending: true) // Sort by newest first
+          .get();
+      debugPrint('Found ${snapshot.docs.length} documents in Firestore');
+
       final posts = snapshot.docs
           .map((doc) {
             try {
-              return Post.fromJson(doc.data());
+              debugPrint('Parsing document ${doc.id}');
+              final post = Post.fromJson(doc.data());
+              debugPrint('Successfully parsed document ${doc.id}');
+              return post;
             } catch (e) {
-              debugPrint(
-                'Error parsing document ${doc.id}: $e, Data: ${doc.data()}',
-              );
+              debugPrint('Error parsing document ${doc.id}: $e');
+              debugPrint('Document data: ${doc.data()}');
               return null;
             }
           })
           .where((post) => post != null)
           .cast<Post>()
           .toList();
-      debugPrint('Fetched ${posts.length} posts');
+      debugPrint(
+        'Successfully fetched ${posts.length} posts out of ${snapshot.docs.length} documents',
+      );
       return posts;
     } catch (e) {
       debugPrint('Error fetching posts: $e');
