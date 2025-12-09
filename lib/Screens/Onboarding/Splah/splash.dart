@@ -21,55 +21,56 @@ class _SplashState extends State<Splash> {
     // Wait for 3 seconds
     await Future.delayed(const Duration(seconds: 3));
 
-    // Check if first launch
+    // Check if user has seen onboarding
     final prefs = await SharedPreferences.getInstance();
-    bool isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
+    bool hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
 
-    if (isFirstLaunch) {
-      // Set flag to false for future launches
-      await prefs.setBool('isFirstLaunch', false);
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const OnboardingSreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  final fade = CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeInOut,
-                  );
-                  return FadeTransition(opacity: fade, child: child);
-                },
-            transitionDuration: const Duration(milliseconds: 800),
-          ),
-        );
-      }
+    if (!mounted) return; // Check if widget is still mounted
+
+    if (hasSeenOnboarding) {
+      // User has seen onboarding, go to login
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const Login(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final fade = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            );
+            return FadeTransition(opacity: fade, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      );
     } else {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const Login(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  final fade = CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeInOut,
-                  );
-                  return FadeTransition(opacity: fade, child: child);
-                },
-            transitionDuration: const Duration(milliseconds: 800),
-          ),
-        );
-      }
+      // First time user, show onboarding
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const OnboardingScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final fade = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            );
+            return FadeTransition(opacity: fade, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: Image(image: AssetImage('assets/images/logo.png'))),
+      body: Center(
+        child: Image(
+          image: AssetImage('assets/images/logo.png'),
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 }

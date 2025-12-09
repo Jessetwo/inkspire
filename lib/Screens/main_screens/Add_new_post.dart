@@ -31,49 +31,113 @@ class _AddNewPostState extends State<AddNewPost> {
     super.dispose();
   }
 
+  // Request storage permission based on Android version
+  Future<bool> _requestStoragePermission() async {
+    if (Platform.isIOS) {
+      // iOS uses photos permission
+      final status = await Permission.photos.request();
+      return status.isGranted;
+    } else {
+      // Android - check version
+      if (await Permission.photos.isGranted) {
+        return true;
+      }
+
+      // For Android 13+ (API 33+), use photos/mediaLibrary
+      if (Platform.isAndroid) {
+        Map<Permission, PermissionStatus> statuses = await [
+          Permission.photos,
+        ].request();
+
+        // If photos permission is not available (older Android), try storage
+        if (statuses[Permission.photos]?.isDenied ?? false) {
+          final storageStatus = await Permission.storage.request();
+          return storageStatus.isGranted;
+        }
+
+        return statuses[Permission.photos]?.isGranted ?? false;
+      }
+
+      return false;
+    }
+  }
+
   // Pick image from gallery or camera with permission handling
   Future<void> _pickImage() async {
     try {
-      // Request gallery permission
-      final status = await Permission.photos.request();
-      if (status.isGranted) {
-        final XFile? pickedFile = await _picker.pickImage(
-          source: ImageSource.gallery,
-          maxWidth: 1024,
-          maxHeight: 1024,
-          imageQuality: 80,
-        );
-        if (pickedFile != null) {
-          setState(() {
-            _selectedImage = File(pickedFile.path);
-          });
+      // Request permission
+      bool hasPermission = await _requestStoragePermission();
+
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gallery access denied')),
+          );
+          // Show dialog to open settings
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Permission Required'),
+              content: const Text(
+                'This app needs access to your photos to select images. Please grant permission in settings.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    openAppSettings();
+                  },
+                  child: const Text('Open Settings'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      // Pick image
+      final XFile? pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+        if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Image selected')));
-        } else {
+        }
+      } else {
+        if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('No image selected')));
         }
-      } else {
-        debugPrint('Permission denied for photos: $status');
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Gallery access denied')));
-        if (status.isPermanentlyDenied) {
-          await openAppSettings();
-        }
       }
     } on PlatformException catch (e) {
       debugPrint('PlatformException in image_picker: ${e.code} - ${e.message}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Permission denied or app error: ${e.message}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
+      }
     } catch (e) {
       debugPrint('General error in image_picker: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
+      }
     }
   }
 
@@ -108,28 +172,35 @@ class _AddNewPostState extends State<AddNewPost> {
         description: _descriptionController.text.trim(),
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post uploaded successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post uploaded successfully')),
+        );
 
-      // Clear form and navigate to Stories page
-      setState(() {
-        _selectedImage = null;
-        _postTitleController.clear();
-        _descriptionController.clear();
-      });
-      debugPrint('Navigating to Stories page');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Stories()),
-      );
+        // Clear form and navigate to Stories page
+        setState(() {
+          _selectedImage = null;
+          _postTitleController.clear();
+          _descriptionController.clear();
+        });
+
+        debugPrint('Navigating to Stories page');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Stories()),
+        );
+      }
     } catch (e) {
       debugPrint('Error uploading post: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error uploading post: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error uploading post: $e')));
+      }
     } finally {
-      setState(() => _isUploading = false);
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
     }
   }
 
@@ -157,14 +228,16 @@ class _AddNewPostState extends State<AddNewPost> {
                 ),
                 const SizedBox(height: 16),
                 MyTextfield(
-                  hint: 'Enter post details',
-                  maxLines: 6,
+                  hint: 'Enter Post Content',
+                  maxLines: 10,
                   controller: _descriptionController,
                 ),
                 const SizedBox(height: 16),
                 GestureDetector(
                   onTap: _pickImage,
                   child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(10),
                     width: double.infinity,
                     height: 200,
                     decoration: BoxDecoration(
@@ -172,18 +245,58 @@ class _AddNewPostState extends State<AddNewPost> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: _selectedImage != null
-                        ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              _selectedImage!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+                          )
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.upload_file, size: 100),
-                              SizedBox(height: 10),
-                              Text('Upload a featured Image'),
+                            children: [
+                              const SizedBox(height: 10),
+                              const Text(
+                                textAlign: TextAlign.center,
+                                'Add A Cover Image',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20),
+                                child: Text(
+                                  'Upload a high quality image to make your post stand out.',
+                                  style: TextStyle(fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Container(
+                                alignment: Alignment.center,
+                                width: 150,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  'Upload Image',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 54),
                 MyButton(
                   title: _isUploading ? 'Uploading...' : 'Share Story',
                   onTap: _isUploading ? null : _uploadPost,

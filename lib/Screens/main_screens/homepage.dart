@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:inkspire/Screens/main_screens/Add_new_post.dart';
+import 'package:inkspire/Screens/main_screens/profile_page.dart';
 import 'package:inkspire/Screens/main_screens/stories.dart';
 
 class Homepage extends StatefulWidget {
@@ -14,13 +15,7 @@ class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
 
   // List of pages for each navigation item
-  final List<Widget> _pages = [
-    Stories(),
-    const Center(child: Text('Bookmark Page')),
-    const Center(child: Text('Search Page')),
-    AddNewPost(),
-    const Center(child: Text('Profile Page')),
-  ];
+  final List<Widget> _pages = [Stories(), AddNewPost(), ProfilePage()];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -45,16 +40,7 @@ class _HomepageState extends State<Homepage> {
             size: 30,
             color: _selectedIndex == 0 ? Colors.white : Colors.black,
           ),
-          Icon(
-            Icons.bookmark,
-            size: 30,
-            color: _selectedIndex == 1 ? Colors.white : Colors.black,
-          ),
-          Icon(
-            Icons.search,
-            size: 30,
-            color: _selectedIndex == 2 ? Colors.white : Colors.black,
-          ),
+
           Icon(
             Icons.add_circle,
             size: 30,

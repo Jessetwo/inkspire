@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:inkspire/models/user_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // Stream to listen to auth state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -34,6 +37,7 @@ class AuthService {
           firstname: firstname,
           othername: othername,
           email: email,
+          profilePicture: null, // No profile picture on registration
         );
 
         // Save to Firestore
@@ -88,7 +92,7 @@ class AuthService {
     }
   }
 
-  // NEW: Reset password by sending a password reset email
+  // Reset password by sending a password reset email
   Future<void> resetPassword({required String email}) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
@@ -102,9 +106,51 @@ class AuthService {
     }
   }
 
-  // Sign out (simplified: only Firebase Auth)
+  // Upload profile picture and update user profile
+  Future<String?> uploadProfilePicture(File imageFile, String userId) async {
+    try {
+      // Create a unique path for the profile picture
+      final String path = 'profile_pictures/$userId.jpg';
+      final ref = _storage.ref().child(path);
+
+      // Upload the file
+      await ref.putFile(imageFile);
+
+      // Get the download URL
+      final downloadUrl = await ref.getDownloadURL();
+
+      // Update user document in Firestore
+      await _firestore.collection('users').doc(userId).update({
+        'profilePicture': downloadUrl,
+      });
+
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading profile picture: $e');
+      rethrow;
+    }
+  }
+
+  // Update profile picture URL in Firestore
+  Future<void> updateProfilePicture(String userId, String pictureUrl) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'profilePicture': pictureUrl,
+      });
+    } catch (e) {
+      print('Error updating profile picture: $e');
+      rethrow;
+    }
+  }
+
+  // Sign out
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      print('Error signing out: $e');
+      rethrow;
+    }
   }
 
   // Get user model from Firestore

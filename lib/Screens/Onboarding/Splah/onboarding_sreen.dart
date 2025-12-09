@@ -1,16 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:inkspire/Screens/Onboarding/auth/login.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class OnboardingSreen extends StatefulWidget {
-  const OnboardingSreen({super.key});
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingSreen> createState() => _OnboardingSreenState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingSreenState extends State<OnboardingSreen> {
+class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
+
+  // Mark onboarding as completed
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(
+      'hasSeenOnboarding',
+      true,
+    ); // Changed to match splash screen key
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Login()),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +40,9 @@ class _OnboardingSreenState extends State<OnboardingSreen> {
             onPageChanged: (int page) {
               setState(() {});
             },
-            children: [
+            children: const [
               OnboardingPage(
-                title: " Welcome to Inkspire",
+                title: "Welcome to Inkspire",
                 description:
                     "Your Space to read, write, and share ideas that inspire. Dive into the world of creativity and expression",
                 imagePath: "assets/images/Notebook.png",
@@ -62,26 +79,21 @@ class _OnboardingSreenState extends State<OnboardingSreen> {
               ),
             ),
           ),
-          // Skip and Next Buttons
+          // Get Started Button
           Positioned(
             bottom: 40,
             left: 20,
             right: 20,
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => Login()),
-                );
-              },
+              onTap: _completeOnboarding,
               child: Container(
                 height: 50,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Color(0xff1E90FF),
+                  color: const Color(0xff1E90FF),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
@@ -110,6 +122,7 @@ class OnboardingPage extends StatelessWidget {
   final String imagePath;
 
   const OnboardingPage({
+    super.key,
     required this.title,
     required this.description,
     required this.imagePath,
@@ -139,5 +152,20 @@ class OnboardingPage extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// Helper function to check if user has seen onboarding
+// Use this in your main.dart or splash screen
+class OnboardingChecker {
+  static Future<bool> hasSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('hasSeenOnboarding') ?? false;
+  }
+
+  // Optional: Clear onboarding status (useful for testing)
+  static Future<void> clearOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('hasSeenOnboarding');
   }
 }

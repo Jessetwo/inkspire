@@ -3,12 +3,14 @@ class UserModel {
   final String firstname;
   final String othername;
   final String email;
+  final String? profilePicture; // Add profile picture field
 
   UserModel({
     required this.id,
     required this.firstname,
     required this.othername,
     required this.email,
+    this.profilePicture,
   });
 
   // Convert UserModel to JSON for Firestore
@@ -18,6 +20,7 @@ class UserModel {
       'firstname': firstname,
       'othername': othername,
       'email': email,
+      'profilePicture': profilePicture,
     };
   }
 
@@ -28,6 +31,7 @@ class UserModel {
       firstname: json['firstname'] ?? '',
       othername: json['othername'] ?? '',
       email: json['email'] ?? '',
+      profilePicture: json['profilePicture'],
     );
   }
 
@@ -37,12 +41,14 @@ class UserModel {
     String? firstname,
     String? othername,
     String? email,
+    String? profilePicture,
   }) {
     return UserModel(
       id: id ?? this.id,
       firstname: firstname ?? this.firstname,
       othername: othername ?? this.othername,
       email: email ?? this.email,
+      profilePicture: profilePicture ?? this.profilePicture,
     );
   }
 }
