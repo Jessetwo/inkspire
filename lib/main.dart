@@ -9,10 +9,8 @@ import 'package:inkspire/Screens/main_screens/homepage.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
   await Firebase.initializeApp();
 
-  // Initialize SharedPreferences (optional pre-warming)
   await SharedPreferences.getInstance();
 
   runApp(const MyApp());
@@ -33,8 +31,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const Splash(),
-        '/onboarding': (context) =>
-            OnboardingScreen(), // Note: Your class name has typo
+        '/onboarding': (context) => OnboardingScreen(),
         '/login': (context) => const Login(),
         '/home': (context) => const Homepage(),
       },

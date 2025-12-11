@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:inkspire/Screens/main_screens/view_profile.dart';
 import 'package:inkspire/components/my_button.dart';
 import 'package:inkspire/components/my_textfield.dart';
 import 'package:inkspire/firebase_image.dart';
@@ -20,7 +21,6 @@ class PostDetails extends StatelessWidget {
     final postService = PostService();
     final user = FirebaseAuth.instance.currentUser;
 
-    // Updated to use authorFirstname and authorOthername
     final authorName =
         (post.authorFirstname.isNotEmpty && post.authorOthername.isNotEmpty)
         ? '${post.authorFirstname} ${post.authorOthername}'
@@ -46,14 +46,14 @@ class PostDetails extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 FirebaseImage(
                   storagePath: post.imagePath,
                   width: double.infinity,
-                  height: 150,
+                  height: 300,
                   fit: BoxFit.fill,
                 ),
                 const SizedBox(height: 16),
@@ -67,12 +67,36 @@ class PostDetails extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  'By $authorName',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'By',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    SizedBox(width: 5),
+                    //Author name
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ViewProfile(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        ' $authorName',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 Text(post.description, style: const TextStyle(fontSize: 16)),

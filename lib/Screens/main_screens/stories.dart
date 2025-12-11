@@ -71,20 +71,24 @@ class _StoriesState extends State<Stories> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: Color(0xff1E90FF),
+        title: Text(
+          'Latest Stories',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              const Row(
-                children: [
-                  Text(
-                    'Latest Stories',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
               const SizedBox(height: 16),
               MyTextfield(
                 hint: 'Search Stories',
@@ -195,7 +199,7 @@ class _StoriesState extends State<Stories> {
                               children: [
                                 FirebaseImage(
                                   storagePath: post.imagePath,
-                                  height: 150,
+                                  height: 300,
                                   width: double.infinity,
                                   fit: BoxFit.fill,
                                 ),
